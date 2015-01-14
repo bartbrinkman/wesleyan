@@ -2,6 +2,7 @@
 
 import math
 import pygame
+from random import choice
 from pprint import pprint
 
 canvasWidth = 10
@@ -58,7 +59,7 @@ class Grid(pygame.sprite.Sprite):
 	def update(self, frametime = 0.0):
 		self.image.fill((255,255,255))
 		self.next += frametime
-		if self.next > 0.1:
+		if self.next > 0.5:
 			self.block.moveDown()
 			self.next = 0.0
 
@@ -72,12 +73,20 @@ class Grid(pygame.sprite.Sprite):
 
 
 class Block(pygame.sprite.Sprite):
+	blocks = [
+		[[1], [1], [1], [1]],			
+		[[1,0], [1,1], [0,1]],
+		[[1,1], [1,1]],
+		[[0,1], [1,1], [1,0]],
+		[[1,0,0], [1,1,1]],
+		[[0,0,1], [1,1,1]]
+	]
 	def __init__(self, grid):
 		pygame.sprite.Sprite.__init__(self, self.groups)
 		self.sprite = pygame.image.load('block.png')
 		self.row = 0
 		self.col = 5
-		self.matrix = [[1,0], [1,1], [0,1]]
+		self.matrix = choice(Block.blocks)
 		self.grid = grid
 		Block.update(self)
 
@@ -120,7 +129,8 @@ class Block(pygame.sprite.Sprite):
 		Block.update(self)
 
 	def rotate(self):
-		self.matrix = list(zip(*self.matrix))
+		# self.matrix = list(zip(*self.matrix))
+		self.matrix = list(zip(*self.matrix[::-1]))
 		Block.update(self)
 
 	def moveDown(self):
@@ -166,13 +176,16 @@ screenInfo = pygame.display.Info()
 screenWidth, screenHeight = int(screenInfo.current_w / 2), int(screenInfo.current_h / 2)
 screen = pygame.Surface((screenWidth, screenHeight))
 
+sound_4006 = pygame.mixer.Sound('wave/4006_shall_we.wav')
+sound_4006.play()
+
 SOME_EVENT = pygame.USEREVENT + 1
 
 clock = pygame.time.Clock()
 fps = 60
 playtime = 0.0 # seconds
 
-keys = [False, False, False, False] # down, left, right, space
+keys = [False, False, False, False, False] # up, down, left, right, space
 
 gridGroup = pygame.sprite.Group()
 blockGroup = pygame.sprite.Group()
@@ -198,40 +211,47 @@ while gameloop:
 		if event.type == pygame.QUIT:
 			gameloop = False
 		if event.type == pygame.KEYDOWN:
-			if event.key == pygame.K_DOWN:
+			if event.key == pygame.K_UP:
 				keys[0] = True
-			if event.key == pygame.K_LEFT:
+			if event.key == pygame.K_DOWN:
 				keys[1] = True
-			if event.key == pygame.K_RIGHT:
+			if event.key == pygame.K_LEFT:
 				keys[2] = True
-			if event.key == pygame.K_SPACE:
+			if event.key == pygame.K_RIGHT:
 				keys[3] = True
+			if event.key == pygame.K_SPACE:
+				keys[4] = True
 			if event.key == pygame.K_ESCAPE:
 				gameloop = False
 		if event.type == pygame.KEYUP:
-			if event.key == pygame.K_DOWN:
+			if event.key == pygame.K_UP:
 				keys[0] = False
-			if event.key == pygame.K_LEFT:
+			if event.key == pygame.K_DOWN:
 				keys[1] = False
-			if event.key == pygame.K_RIGHT:
+			if event.key == pygame.K_LEFT:
 				keys[2] = False
-			if event.key == pygame.K_SPACE:
+			if event.key == pygame.K_RIGHT:
 				keys[3] = False
-						
-	if keys[0]: # down
+			if event.key == pygame.K_SPACE:
+				keys[4] = False
+				
+	if keys[0]: #up
+		grid.block.rotate()
+		keys[0] = False
+
+	if keys[1]: # down
 		grid.block.moveDown()
 
-	if keys[1]: # left
+	if keys[2]: # left
 		grid.block.moveLeft()
-		keys[1] = False
-
-	if keys[2]: # right
-		grid.block.moveRight()
 		keys[2] = False
 
-	if keys[3]:
-		grid.block.rotate()
+	if keys[3]: # right
+		grid.block.moveRight()
 		keys[3] = False
+
+	if keys[4]: # space
+		grid.block.moveDown()
 
 	display.fill((255,0,0))
 	everythingGroup.update(frametime)
