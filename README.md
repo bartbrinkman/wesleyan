@@ -1,9 +1,11 @@
+Faithful recreation of Wesleyan Tetris.
+
 audio:
 
 unsigned 8 bit pcm
-no endianness
+no endianness (mostly)
 mono
-8192 hz / 11025 hz
+11025 hz
 
 startup: 'shall we play a game'
 
