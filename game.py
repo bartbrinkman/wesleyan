@@ -81,85 +81,87 @@ class Grid(pygame.sprite.Sprite):
 					
 					
 	def shading(self, type, x, y):
-		# the amount of hard-coding here says we need to develop a generalized shading routine
-
 		pattern = patterns[type.split(':')[0]]
 		self.image.blit(pattern, (x * blockSize + 4, y * blockSize + 4))
 
-		if self.matrix[y][x - 1] != type:
-			pygame.draw.line(self.image, (255,255,255), (x * blockSize + 1, y * blockSize + 1), (x * blockSize - 2 + blockSize, y * blockSize + 1))
-			pygame.draw.line(self.image, (255,255,255), (x * blockSize + 1, y * blockSize + 2), (x * blockSize - 3 + blockSize, y * blockSize + 2))
-			pygame.draw.line(self.image, (255,255,255), (x * blockSize + 1, y * blockSize + 3), (x * blockSize - 4 + blockSize, y * blockSize + 3))
-			pygame.draw.line(self.image, (255,255,255), (x * blockSize + 1, y * blockSize + 1), (x * blockSize + 1, y * blockSize + blockSize - 2))
-			pygame.draw.line(self.image, (255,255,255), (x * blockSize + 2, y * blockSize + 2), (x * blockSize + 2, y * blockSize + blockSize - 3))
-			pygame.draw.line(self.image, (255,255,255), (x * blockSize + 3, y * blockSize + 3), (x * blockSize + 3, y * blockSize + blockSize - 4))
+		# apply patterns
 
-		if self.matrix[y][x - 1] == type: # same type left of block
-			pygame.draw.line(self.image, (255,255,255), (x * blockSize - 1, y * blockSize + 1), (x * blockSize - 2 + blockSize, y * blockSize + 1))
-			pygame.draw.line(self.image, (255,255,255), (x * blockSize - 2, y * blockSize + 2), (x * blockSize - 3 + blockSize, y * blockSize + 2))
-			pygame.draw.line(self.image, (255,255,255), (x * blockSize - 3, y * blockSize + 3), (x * blockSize - 4 + blockSize, y * blockSize + 3))
+		if self.matrix[y][x - 1] == type:
 			self.image.blit(pattern, (x * blockSize - 4, y * blockSize + 4))
-
-		if self.matrix[y - 1][x] == type: # same type top of block
-			pygame.draw.line(self.image, (255,255,255), (x * blockSize + 1, y * blockSize - 1), (x * blockSize + 1, y * blockSize + blockSize - 2))
-			pygame.draw.line(self.image, (255,255,255), (x * blockSize + 2, y * blockSize - 2), (x * blockSize + 2, y * blockSize + blockSize - 3))
-			pygame.draw.line(self.image, (255,255,255), (x * blockSize + 3, y * blockSize - 3), (x * blockSize + 3, y * blockSize + blockSize - 4))
+		if self.matrix[y - 1][x] == type:
 			self.image.blit(pattern, (x * blockSize + 4, y * blockSize - 4))
-
 		if self.matrix[y - 1][x] == type and self.matrix[y][x - 1] == type and self.matrix[y - 1][x - 1] != type:
 			self.image.blit(pattern, (x * blockSize + 4, y * blockSize + 4))
 			self.image.blit(pattern, (x * blockSize - 4, y * blockSize + 4))
-
 		if self.matrix[y - 1][x] == type and self.matrix[y][x - 1] == type and self.matrix[y - 1][x - 1] == type:
 			self.image.blit(pattern, (x * blockSize - 4, y * blockSize - 4))
 			self.image.blit(pattern, (x * blockSize - 4, y * blockSize + 4))
 
-		try:
-			if self.matrix[y][x - 1] == type and self.matrix[y - 1][x] == type and self.matrix[y - 1][x + 1] == type and self.matrix[y][x + 1] != type:
-				pygame.draw.line(self.image, (0,0,0), (x * blockSize + 1, y * blockSize + blockSize - 4), (x * blockSize + 1, y * blockSize + blockSize - 2))
-				pygame.draw.line(self.image, (0,0,0), (x * blockSize + 2, y * blockSize + blockSize - 4), (x * blockSize + 2, y * blockSize + blockSize - 3))
-				pygame.draw.line(self.image, (0,0,0), (x * blockSize + 3, y * blockSize + blockSize - 4), (x * blockSize + 3, y * blockSize + blockSize - 4))
-				pygame.draw.line(self.image, (0,0,0), (x * blockSize + blockSize - 2, y * blockSize + 1), (x * blockSize + blockSize - 2, y * blockSize + 1))
-				pygame.draw.line(self.image, (0,0,0), (x * blockSize + blockSize - 3, y * blockSize + 1), (x * blockSize + blockSize - 3, y * blockSize + 2))
-				pygame.draw.line(self.image, (0,0,0), (x * blockSize + blockSize - 4, y * blockSize + 1), (x * blockSize + blockSize - 4, y * blockSize + 3))
-			if self.matrix[y - 1][x] == type and self.matrix[y + 1][x] == type and self.matrix[y - 1][x + 1] != type and self.matrix[y][x + 1] != type and self.matrix[y + 1][x + 1] != type:
-				pygame.draw.line(self.image, (0,0,0), (x * blockSize + blockSize - 2, y * blockSize + 1), (x * blockSize + blockSize - 2, y * blockSize + 1))
-				pygame.draw.line(self.image, (0,0,0), (x * blockSize + blockSize - 3, y * blockSize + 1), (x * blockSize + blockSize - 3, y * blockSize + 2))
-				pygame.draw.line(self.image, (0,0,0), (x * blockSize + blockSize - 4, y * blockSize + 1), (x * blockSize + blockSize - 4, y * blockSize + 3))
-			if self.matrix[y - 1][x] == type and self.matrix[y - 1][x + 1] != type and self.matrix[y][x + 1] != type:
-				pygame.draw.line(self.image, (0,0,0), (x * blockSize + blockSize - 2, y * blockSize + 1), (x * blockSize + blockSize - 2, y * blockSize + 1))
-				pygame.draw.line(self.image, (0,0,0), (x * blockSize + blockSize - 3, y * blockSize + 1), (x * blockSize + blockSize - 3, y * blockSize + 2))
-				pygame.draw.line(self.image, (0,0,0), (x * blockSize + blockSize - 4, y * blockSize + 1), (x * blockSize + blockSize - 4, y * blockSize + 3))	
-			if self.matrix[y - 1][x] == type and self.matrix[y][x + 1] == type and self.matrix[y - 1][x + 1] != type:
-				pygame.draw.line(self.image, (0,0,0), (x * blockSize + blockSize - 2, y * blockSize + 1), (x * blockSize + blockSize - 2, y * blockSize + 1))
-				pygame.draw.line(self.image, (0,0,0), (x * blockSize + blockSize - 3, y * blockSize + 1), (x * blockSize + blockSize - 3, y * blockSize + 2))
-				pygame.draw.line(self.image, (0,0,0), (x * blockSize + blockSize - 4, y * blockSize + 1), (x * blockSize + blockSize - 4, y * blockSize + 3))
-		except IndexError:
-			pass
+		# apply shading
 
 		try:
-			if self.matrix[y][x - 1] == type and self.matrix[y + 1][x - 1] != type and self.matrix[y + 1][x] != type:
-				pygame.draw.line(self.image, (0,0,0), (x * blockSize + 1, y * blockSize + blockSize - 4), (x * blockSize + 1, y * blockSize + blockSize - 2))
-				pygame.draw.line(self.image, (0,0,0), (x * blockSize + 2, y * blockSize + blockSize - 4), (x * blockSize + 2, y * blockSize + blockSize - 3))
-				pygame.draw.line(self.image, (0,0,0), (x * blockSize + 3, y * blockSize + blockSize - 4), (x * blockSize + 3, y * blockSize + blockSize - 4))
+			if self.matrix[y - 1][x - 1] != type and self.matrix[y][x - 1] != type and self.matrix[y - 1][x] != type: # left top
+				if self.matrix[y + 1][x] == type: # block below is same
+					if self.matrix[y + 1][x - 1] == type: # beyond
+						pygame.draw.line(self.image, (255,255,255), (x * blockSize + 1, y * blockSize + 1), (x * blockSize + 1, y * blockSize + blockSize + 0))
+						pygame.draw.line(self.image, (255,255,255), (x * blockSize + 2, y * blockSize + 2), (x * blockSize + 2, y * blockSize + blockSize + 1))
+						pygame.draw.line(self.image, (255,255,255), (x * blockSize + 3, y * blockSize + 3), (x * blockSize + 3, y * blockSize + blockSize + 2))
+					else: # straight down
+						pygame.draw.line(self.image, (255,255,255), (x * blockSize + 1, y * blockSize + 1), (x * blockSize + 1, y * blockSize + blockSize))
+						pygame.draw.line(self.image, (255,255,255), (x * blockSize + 2, y * blockSize + 2), (x * blockSize + 2, y * blockSize + blockSize))
+						pygame.draw.line(self.image, (255,255,255), (x * blockSize + 3, y * blockSize + 3), (x * blockSize + 3, y * blockSize + blockSize))
+				else: # partial
+					pygame.draw.line(self.image, (255,255,255), (x * blockSize + 1, y * blockSize + 1), (x * blockSize + 1, y * blockSize + blockSize - 2))
+					pygame.draw.line(self.image, (255,255,255), (x * blockSize + 2, y * blockSize + 2), (x * blockSize + 2, y * blockSize + blockSize - 3))
+					pygame.draw.line(self.image, (255,255,255), (x * blockSize + 3, y * blockSize + 3), (x * blockSize + 3, y * blockSize + blockSize - 4))
+		except IndexError: # bottom of canvas: partial
+			pygame.draw.line(self.image, (255,255,255), (x * blockSize + 1, y * blockSize + 1), (x * blockSize + 1, y * blockSize + blockSize - 2))
+			pygame.draw.line(self.image, (255,255,255), (x * blockSize + 2, y * blockSize + 2), (x * blockSize + 2, y * blockSize + blockSize - 3))
+			pygame.draw.line(self.image, (255,255,255), (x * blockSize + 3, y * blockSize + 3), (x * blockSize + 3, y * blockSize + blockSize - 4))
+
+		
+		try:
+			if self.matrix[y - 1][x] != type:
+				if self.matrix[y][x + 1] == type:
+					if self.matrix[y -1][x + 1] == type:
+						pygame.draw.line(self.image, (255,255,255), (x * blockSize + 1, y * blockSize + 1), (x * blockSize + blockSize + 1, y * blockSize + 1))
+						pygame.draw.line(self.image, (255,255,255), (x * blockSize + 2, y * blockSize + 2), (x * blockSize + blockSize + 2, y * blockSize + 2))
+						pygame.draw.line(self.image, (255,255,255), (x * blockSize + 3, y * blockSize + 3), (x * blockSize + blockSize + 3, y * blockSize + 3))
+					else:
+						if self.matrix[y][x - 1] == type:
+							pygame.draw.line(self.image, (255,255,255), (x * blockSize - 1, y * blockSize + 1), (x * blockSize + blockSize - 2, y * blockSize + 1))
+							pygame.draw.line(self.image, (255,255,255), (x * blockSize - 1, y * blockSize + 2), (x * blockSize + blockSize - 2, y * blockSize + 2))
+							pygame.draw.line(self.image, (255,255,255), (x * blockSize - 1, y * blockSize + 3), (x * blockSize + blockSize - 2, y * blockSize + 3))
+						else:
+							pygame.draw.line(self.image, (255,255,255), (x * blockSize + 1, y * blockSize + 1), (x * blockSize + blockSize + 1, y * blockSize + 1))
+							pygame.draw.line(self.image, (255,255,255), (x * blockSize + 2, y * blockSize + 2), (x * blockSize + blockSize + 2, y * blockSize + 2))
+							pygame.draw.line(self.image, (255,255,255), (x * blockSize + 3, y * blockSize + 3), (x * blockSize + blockSize + 3, y * blockSize + 3))
+				else:
+					if self.matrix[y][x - 1] == type:
+						pygame.draw.line(self.image, (255,255,255), (x * blockSize - 1, y * blockSize + 1), (x * blockSize + blockSize - 2, y * blockSize + 1))
+						pygame.draw.line(self.image, (255,255,255), (x * blockSize - 2, y * blockSize + 2), (x * blockSize + blockSize - 3, y * blockSize + 2))
+						pygame.draw.line(self.image, (255,255,255), (x * blockSize - 3, y * blockSize + 3), (x * blockSize + blockSize - 4, y * blockSize + 3))
+					else:
+						pygame.draw.line(self.image, (255,255,255), (x * blockSize + 1, y * blockSize + 1), (x * blockSize + blockSize - 2, y * blockSize + 1))
+						pygame.draw.line(self.image, (255,255,255), (x * blockSize + 2, y * blockSize + 2), (x * blockSize + blockSize - 3, y * blockSize + 2))
+						pygame.draw.line(self.image, (255,255,255), (x * blockSize + 3, y * blockSize + 3), (x * blockSize + blockSize - 4, y * blockSize + 3))
 		except IndexError:
 			if self.matrix[y][x - 1] == type:
-				pygame.draw.line(self.image, (0,0,0), (x * blockSize + 1, y * blockSize + blockSize - 4), (x * blockSize + 1, y * blockSize + blockSize - 2))
-				pygame.draw.line(self.image, (0,0,0), (x * blockSize + 2, y * blockSize + blockSize - 4), (x * blockSize + 2, y * blockSize + blockSize - 3))
-				pygame.draw.line(self.image, (0,0,0), (x * blockSize + 3, y * blockSize + blockSize - 4), (x * blockSize + 3, y * blockSize + blockSize - 4))
+				pygame.draw.line(self.image, (255,255,255), (x * blockSize - 1, y * blockSize + 1), (x * blockSize + blockSize - 2, y * blockSize + 1))
+				pygame.draw.line(self.image, (255,255,255), (x * blockSize - 2, y * blockSize + 2), (x * blockSize + blockSize - 3, y * blockSize + 2))
+				pygame.draw.line(self.image, (255,255,255), (x * blockSize - 3, y * blockSize + 3), (x * blockSize + blockSize - 4, y * blockSize + 3))
+			else:
+				pygame.draw.line(self.image, (255,255,255), (x * blockSize + 1, y * blockSize + 1), (x * blockSize + blockSize - 2, y * blockSize + 1))
+				pygame.draw.line(self.image, (255,255,255), (x * blockSize + 2, y * blockSize + 2), (x * blockSize + blockSize - 3, y * blockSize + 2))
+				pygame.draw.line(self.image, (255,255,255), (x * blockSize + 3, y * blockSize + 3), (x * blockSize + blockSize - 4, y * blockSize + 3))
 
-		if x == canvasWidth - 1:
-			try:
-				if self.matrix[y - 1][x] == type and self.matrix[y - 1][x + 1] != type and self.matrix[y][x + 1] != type and self.matrix[y + 1][x + 1] != type:
-					pygame.draw.line(self.image, (0,0,0), (x * blockSize + blockSize - 2, y * blockSize + 1), (x * blockSize + blockSize - 2, y * blockSize + 1))
-					pygame.draw.line(self.image, (0,0,0), (x * blockSize + blockSize - 3, y * blockSize + 1), (x * blockSize + blockSize - 3, y * blockSize + 2))
-					pygame.draw.line(self.image, (0,0,0), (x * blockSize + blockSize - 4, y * blockSize + 1), (x * blockSize + blockSize - 4, y * blockSize + 3))
-			except IndexError:
-				if self.matrix[y - 1][x] == type:
-					pygame.draw.line(self.image, (0,0,0), (x * blockSize + blockSize - 2, y * blockSize + 1), (x * blockSize + blockSize - 2, y * blockSize + 1))
-					pygame.draw.line(self.image, (0,0,0), (x * blockSize + blockSize - 3, y * blockSize + 1), (x * blockSize + blockSize - 3, y * blockSize + 2))
-					pygame.draw.line(self.image, (0,0,0), (x * blockSize + blockSize - 4, y * blockSize + 1), (x * blockSize + blockSize - 4, y * blockSize + 3))
-
+		try:
+			if self.matrix[y][x - 1] != type and self.matrix[y - 1][x] == type:
+				pygame.draw.line(self.image, (255,255,255), (x * blockSize + 1, y * blockSize + blockSize - 2), (x * blockSize + 1, y * blockSize - 1))
+				pygame.draw.line(self.image, (255,255,255), (x * blockSize + 2, y * blockSize + blockSize - 3), (x * blockSize + 2, y * blockSize - 2))
+				pygame.draw.line(self.image, (255,255,255), (x * blockSize + 3, y * blockSize + blockSize - 4), (x * blockSize + 3, y * blockSize - 3))
+		except IndexError:
+			pass
 
 	def crystalize(self):
 		for y, row in enumerate(self.block.matrix):
@@ -197,17 +199,14 @@ class Block(pygame.sprite.Sprite):
 	id = 1
 	collection = {}
 	blocks = {
-		
-		#1: [[1], [1], [1], [1]],
-		#2: [[1,0], [1,1], [0,1]],
-		#3: [[1,1], [1,1]],
-		#4: [[0,1], [1,1], [1,0]],
-		
+		1: [[1], [1], [1], [1]],
+		2: [[1,0], [1,1], [0,1]],
+		3: [[1,1], [1,1]],
+		4: [[0,1], [1,1], [1,0]],
 		# 5: [[1,0,0], [1,1,1]],
-		
 		6: [[0,0,1], [1,1,1]],
 		7: [[0,1,0], [1,1,1]],
-		#8: [[1]]
+		8: [[1]]
 	}
 
 	def __init__(self, grid):
