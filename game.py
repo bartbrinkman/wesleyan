@@ -6,10 +6,66 @@ from copy import deepcopy
 from random import choice
 from pprint import pprint
 
+pygame.init()
+
 canvasWidth = 10
 canvasHeight = 18
 blockSize = 16
 
+patterns = {
+	'1': pygame.image.load('images/pattern-1.png'),
+	'2': pygame.image.load('images/pattern-2.png'),
+	'3': pygame.image.load('images/pattern-3.png'),
+	'4': pygame.image.load('images/pattern-4.png'),
+	'6': pygame.image.load('images/pattern-6.png'),
+	'7': pygame.image.load('images/pattern-7.png'),
+	'8': pygame.image.load('images/pattern-8.png')
+}
+
+sounds = {
+	'drop': {
+		1:  pygame.mixer.Sound('sounds/1000-Ooo.wav'),
+		2:  pygame.mixer.Sound('sounds/1001-Nice Fit.wav'),
+		3:  pygame.mixer.Sound('sounds/1002-Yeah.wav'),
+		4:  pygame.mixer.Sound('sounds/1003-Oh my god.wav'),
+		5:  pygame.mixer.Sound('sounds/1004-burp.wav'),
+		6:  pygame.mixer.Sound('sounds/1005-doubleburp.wav'),
+		7:  pygame.mixer.Sound('sounds/1006-gasp.wav'),
+		8:  pygame.mixer.Sound('sounds/1007-Drums.wav'),
+		9:  pygame.mixer.Sound('sounds/1008-Click.wav'),
+		10: pygame.mixer.Sound('sounds/1009-whoa.wav'),
+		11: pygame.mixer.Sound('sounds/1010-wooh.wav'),
+		12: pygame.mixer.Sound('sounds/1011-step.wav'),
+		13: pygame.mixer.Sound('sounds/1012-clicks.wav'),
+
+		14: pygame.mixer.Sound('sounds/2000-Lame.wav'),
+		15: pygame.mixer.Sound('sounds/2001-Lessons.wav'),
+		16: pygame.mixer.Sound('sounds/2002-You-suck.wav'),
+		17: pygame.mixer.Sound('sounds/2003-I hope your.wav'),
+		18: pygame.mixer.Sound('sounds/2004-Son of a.wav'),
+		19: pygame.mixer.Sound('sounds/2005-Good One.wav'),
+		20: pygame.mixer.Sound('sounds/2006-Shattered.wav'),
+		21: pygame.mixer.Sound('sounds/2007-Bozo.wav'),
+		22: pygame.mixer.Sound('sounds/2008-fart.wav'),
+		23: pygame.mixer.Sound('sounds/2009-otherfart.wav'),
+		24: pygame.mixer.Sound('sounds/2010-You meant.wav'),
+		25: pygame.mixer.Sound('sounds/2011-I assume.wav'),
+		26: pygame.mixer.Sound('sounds/2012-oops.wav'),
+		27: pygame.mixer.Sound('sounds/2013-whoops.wav'),
+		28: pygame.mixer.Sound('sounds/2014-what for.wav'),
+		29: pygame.mixer.Sound('sounds/2015-why.wav')
+	},
+	'destroy': {
+		1: pygame.mixer.Sound('sounds/3000-Congrats.wav'),
+		2: pygame.mixer.Sound('sounds/3001-I bet you.wav'),
+		3: pygame.mixer.Sound('sounds/3002-longburp.wav'),
+		4: pygame.mixer.Sound('sounds/3003-Addicted.wav'),
+		5: pygame.mixer.Sound('sounds/3004-Cow.wav'),
+		6: pygame.mixer.Sound('sounds/3005-Rooster.wav'),
+		7: pygame.mixer.Sound('sounds/3006-Long Fart.wav'),
+		7: pygame.mixer.Sound('sounds/3007-shots.wav')
+	}
+}
 
 class Text(pygame.sprite.Sprite):
 	id = 1
@@ -45,7 +101,6 @@ class Tetris():
 		by, bx = y, x
 		self.image.blit(pattern, (bx * blockSize + 4, by * blockSize + 4))
 		
-
 		if self.__class__.__name__ == 'Block':
 			type = 1
 			matrix = deepcopy(self.matrix)
@@ -63,8 +118,6 @@ class Tetris():
 			x += 1
 		else:
 			matrix = self.matrix
-
-
 
 		# apply patterns
 
@@ -101,7 +154,6 @@ class Tetris():
 			pygame.draw.line(self.image, (255,255,255), (bx * blockSize + 2, by * blockSize + 2), (bx * blockSize + 2, by * blockSize + blockSize - 3))
 			pygame.draw.line(self.image, (255,255,255), (bx * blockSize + 3, by * blockSize + 3), (bx * blockSize + 3, by * blockSize + blockSize - 4))
 
-		
 		try:
 			if matrix[y - 1][x] != type:
 				if matrix[y][x + 1] == type:
@@ -191,9 +243,10 @@ class Grid(Tetris, pygame.sprite.Sprite):
 					self.matrix[grid.block.row + y][grid.block.col + x] = str(grid.block.type) + ':' + str(grid.block.id)
 		self.block.kill()
 		del self.block
+		pygame.mixer.stop()
+		sounds['drop'][choice(list(sounds['drop']))].play()
 		self.block = Block(self)
 		
-
 	def checkCompleted(self):
 		for y in range(0, canvasHeight):
 			count = 0
@@ -204,6 +257,8 @@ class Grid(Tetris, pygame.sprite.Sprite):
 						self.destroyRow(y)
 
 	def destroyRow(self, targetRow):
+		pygame.mixer.stop()
+		sounds['destroy'][choice(list(sounds['destroy']))].play()
 		for x in range(0, canvasWidth):
 		 	self.matrix[targetRow][x] = 0
 		
@@ -214,7 +269,6 @@ class Grid(Tetris, pygame.sprite.Sprite):
 					self.matrix[y][x] = 0
 				else:
 					self.matrix[y][x] = self.matrix[y - 1][x]
-
 
 class Block(Tetris, pygame.sprite.Sprite):
 	id = 1
@@ -342,24 +396,15 @@ display = pygame.display.set_mode((0,0), pygame.FULLSCREEN)
 pygame.display.set_caption('Wesleyan Tetris');
 screenInfo = pygame.display.Info()
 screenWidth, screenHeight = int(screenInfo.current_w / 2), int(screenInfo.current_h / 2)
-screen = pygame.Surface((screenWidth, screenHeight))
+screen = pygame.Surface((canvasWidth * blockSize, canvasHeight * blockSize))
+background = pygame.Surface((screenWidth, screenHeight))
 screenPattern = pygame.image.load('images/background.png')
 for x in range(int(screenWidth / 2)):
 	for y in range(int(screenHeight / 2)):
-		screen.blit(screenPattern, (x * 2, y * 2))
+		background.blit(screenPattern, (x * 2, y * 2))
 
 sound_4006 = pygame.mixer.Sound('sounds/4006-Shall we.wav')
 sound_4006.play()
-
-patterns = {
-	'1': pygame.image.load('images/pattern-1.png'),
-	'2': pygame.image.load('images/pattern-2.png'),
-	'3': pygame.image.load('images/pattern-3.png'),
-	'4': pygame.image.load('images/pattern-4.png'),
-	'6': pygame.image.load('images/pattern-6.png'),
-	'7': pygame.image.load('images/pattern-7.png'),
-	'8': pygame.image.load('images/pattern-8.png')
-}
 
 SOME_EVENT = pygame.USEREVENT + 1
 
@@ -383,7 +428,7 @@ Block.groups = blockGroup, everythingGroup
 Text.groups = textGroup, everythingGroup
 
 grid = Grid()
-Text('This is Tetris', [2,0])
+# Text('This is Tetris', [2,0])
 
 gameloop = True
 while gameloop:
@@ -440,7 +485,10 @@ while gameloop:
 
 	everythingGroup.update(frametime)
 	everythingGroup.draw(screen)
-	pygame.transform.scale(screen, (screenInfo.current_w, screenInfo.current_h), display)
+	pygame.transform.scale(background, (screenInfo.current_w, screenInfo.current_h), display)
+
+	result = pygame.transform.scale(screen, (canvasWidth * blockSize * 2, canvasHeight * blockSize * 2))
+	display.blit(result, (screenWidth - ((canvasWidth * blockSize * 2) / 2), screenHeight - ((canvasHeight * blockSize * 2) / 2)))
 	pygame.display.flip()
 	
 pygame.quit()
