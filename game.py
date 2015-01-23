@@ -22,6 +22,8 @@ patterns = {
 	'8': pygame.image.load('images/pattern-8.png')
 }
 
+menu = { 1: pygame.image.load('images/menu-1.png'), 2: pygame.image.load('images/menu-2.png') }
+
 sounds = {
 	'drop': {
 		1:  pygame.mixer.Sound('sounds/1000-Ooo.wav'),
@@ -489,6 +491,12 @@ while gameloop:
 
 	result = pygame.transform.scale(screen, (canvasWidth * blockSize * 2, canvasHeight * blockSize * 2))
 	display.blit(result, (screenWidth - ((canvasWidth * blockSize * 2) / 2), screenHeight - ((canvasHeight * blockSize * 2) / 2)))
+	
+	pygame.draw.rect(display, (255,255,255), (0,0,screenWidth * 2,38))
+	pygame.draw.rect(display, (0,0,0), (0,38,screenWidth * 2,2))
+	display.blit(pygame.transform.scale(menu[1], (304,40)), (0,0))
+	display.blit(pygame.transform.scale(menu[2], (10, 40)), (screenWidth * 2 - 10,0))
+	
 	pygame.display.flip()
 	
 pygame.quit()
