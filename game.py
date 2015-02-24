@@ -3,26 +3,33 @@
 import math
 import pygame
 from copy import deepcopy
-from random import choice
+import random
 from pprint import pprint
 
 pygame.init()
 
-canvasWidth = 10
-canvasHeight = 18
+gridWidth = 10
+gridHeight = 18
 blockSize = 16
+gridHorizontalOffset = 158
+gridVerticalOffset = 8
+
 
 patterns = {
-	'1': pygame.image.load('images/pattern-1.png'),
-	'2': pygame.image.load('images/pattern-2.png'),
-	'3': pygame.image.load('images/pattern-3.png'),
-	'4': pygame.image.load('images/pattern-4.png'),
-	'6': pygame.image.load('images/pattern-6.png'),
-	'7': pygame.image.load('images/pattern-7.png'),
-	'8': pygame.image.load('images/pattern-8.png')
+	'30': pygame.image.load('images/pattern-3.png'),
+	 '1': pygame.image.load('images/pattern-1.png'),
+	 '2': pygame.image.load('images/pattern-2.png'),
+	 '3': pygame.image.load('images/pattern-3.png'),
+	 '4': pygame.image.load('images/pattern-4.png'),
+ 	 '6': pygame.image.load('images/pattern-6.png'),
+	 '7': pygame.image.load('images/pattern-7.png'),
+	 '8': pygame.image.load('images/pattern-8.png')
 }
 
-menu = { 1: pygame.image.load('images/menu-1.png'), 2: pygame.image.load('images/menu-2.png') }
+menu = { 
+	1: pygame.image.load('images/menu-1.png'), 
+	2: pygame.image.load('images/menu-2.png') 
+}
 
 sounds = {
 	'drop': {
@@ -66,8 +73,73 @@ sounds = {
 		6: pygame.mixer.Sound('sounds/3005-Rooster.wav'),
 		7: pygame.mixer.Sound('sounds/3006-Long Fart.wav'),
 		7: pygame.mixer.Sound('sounds/3007-shots.wav')
+	},
+	'misc': {
+		1: pygame.mixer.Sound('sounds/4004-I\'ll be back.wav'),
+		2: pygame.mixer.Sound('sounds/4001-NaNaNa.wav')
 	}
 }
+
+class Canvas(pygame.sprite.Sprite):
+	def __init__(self):
+		pygame.sprite.Sprite.__init__(self, self.groups)
+		self.image = pygame.image.load('images/canvas.png')
+		self.level = 1
+		self.score = 0
+		self.rowsPending = 10
+		self.rowsDone = 0
+		self.levelLabel = Text('Level:', [11, 100])
+		self.scoreLabel = Text('Score:', [11, 116])
+		self.leftLabel = Text('Rows left:', [11, 128])
+		self.doneLabel = Text('Rows done:', [11, 142])
+		self.levelText = Text(str(0), [100, 100])
+		self.scoreText = Text(str(0), [100, 114])
+		self.leftText = Text(str(0), [100, 128])
+		self.doneText = Text(str(0), [100, 142])
+		self.grid = Grid()
+		self.nasty = 0
+
+
+	def update(self, frametime):
+		self.rect = self.image.get_rect()
+		self.rect.x = 0
+		self.rect.y = 0
+		self.levelText.setContent(str(self.level))
+		self.scoreText.setContent(str(self.score))
+		self.leftText.setContent(str(self.rowsPending))
+		self.doneText.setContent(str(self.rowsDone))
+		self.nasty += 1
+		if self.nasty > 100:
+			while self.nasty > 0:
+				y = random.randint(0, gridHeight - 1)
+				x = random.randint(0, gridWidth  - 1)
+				candidate = self.grid.matrix[y][x]
+				if isinstance(candidate, int) == False:
+					# candidate = candidate.split(':')[0]
+					self.grid.matrix[y][x] = '30'
+					self.nasty = 0
+				
+			
+			sounds['misc'][2].play()
+			pprint(candidate)
+
+
+	def scoreBlockDown(self):
+		self.score += 1
+
+	def scoreRowCleared(self):
+		self.score += 10
+		self.rowsPending -= 1
+		self.rowsDone += 1
+		if self.rowsPending <= 0:
+			self.newLevel()
+
+	def newLevel(self):
+		self.level += 1
+		self.rowsPending = 10 + self.level
+		self.nasty = 0
+		self.grid.initialize(self.level)
+
 
 class Text(pygame.sprite.Sprite):
 	id = 1
@@ -82,25 +154,32 @@ class Text(pygame.sprite.Sprite):
 		self.setContent(content)
 
 	def update(self, frametime):
-		pass
-
-	def setContent(self, content):
-		self.content = content
 		self.image = self.font.render(self.content, False, (0,0,0))
 		self.rect = self.image.get_rect()
 		self.rect.x = self.x
 		self.rect.y = self.y
 
+	def setContent(self, content):
+		self.content = content
+
 	def setPosition(self, position):
 		self.x = position[0]
 		self.y = position[1]
-		self.rect.x = self.x
-		self.rect.y = self.y
+
 
 class Tetris():
 	def shading(self, type, x, y):
-		pattern = patterns[type.split(':')[0]]
+		index = type.split(':')[0]
+		pattern = patterns[index]
 		by, bx = y, x
+
+		if int(index) >= 30:
+			self.image.blit(pattern, (bx * blockSize, by * blockSize))
+			self.image.blit(pattern, (bx * blockSize + 8, by * blockSize))
+			self.image.blit(pattern, (bx * blockSize, by * blockSize + 8))
+			self.image.blit(pattern, (bx * blockSize + 8, by * blockSize + 8))
+			return
+
 		self.image.blit(pattern, (bx * blockSize + 4, by * blockSize + 4))
 		
 		if self.__class__.__name__ == 'Block':
@@ -202,38 +281,103 @@ class Tetris():
 class Grid(Tetris, pygame.sprite.Sprite):
 	def __init__(self):
 		pygame.sprite.Sprite.__init__(self, self.groups)
-		self.matrix = []
-		for y in range(0, canvasHeight):
-			row = []
-			for x in range(0, canvasWidth):
-				row.append(0)
-			self.matrix.append(row)
+		self.initialize()
 		self.x, self.y = 0, 0
-		self.image = pygame.Surface((canvasWidth * blockSize, canvasHeight * blockSize))
+		self.image = pygame.Surface((gridWidth * blockSize, gridHeight * blockSize))
 		self.rect = self.image.get_rect()
-		self.rect.x, self.rect.y = self.x, self.y
-		self.block = Block(self)
+		self.rect.x, self.rect.y = self.x + gridHorizontalOffset, self.y + gridVerticalOffset
 		self.next = 0.0
 		Grid.update(self)
+
+	def initialize(self, level = 1):
+		self.matrix = []
+
+		try:
+			self.block.kill()
+			del self.block
+		except Exception:
+			pass
+
+		self.block = Block(self)
+
+		for y in range(0, gridHeight):
+			row = []
+			for x in range(0, gridWidth):
+				row.append(0)
+			self.matrix.append(row)
+		
+		if level == 2:
+			self.matrix[17][0] = '30'
+			self.matrix[16][0] = '30'
+			self.matrix[15][0] = '30'
+			self.matrix[14][0] = '30'
+			self.matrix[13][0] = '30'
+			self.matrix[12][0] = '30'
+			self.matrix[11][0] = '30'
+			self.matrix[10][0] = '30' 
+			self.matrix[9][0]  = '30'
+			self.matrix[8][0]  = '30' 
+			self.matrix[7][0]  = '30' 
+			self.matrix[7][1]  = '30'
+			self.matrix[17][9] = '30'
+			self.matrix[16][9] = '30'
+			self.matrix[15][9] = '30'
+			self.matrix[14][9] = '30'
+			self.matrix[13][9] = '30'
+			self.matrix[12][9] = '30'
+			self.matrix[11][9] = '30'
+			self.matrix[10][9] = '30'
+			self.matrix[9][9]  = '30'
+			self.matrix[8][9]  = '30'  
+			self.matrix[7][9]  = '30' 
+			self.matrix[7][8]  = '30'
+
+		if level == 100:
+			self.matrix[17][0] = '2'
+			self.matrix[17][1] = '3'
+			self.matrix[17][2] = '3'
+			self.matrix[17][4] = '3'
+			self.matrix[17][5] = '3'
+			self.matrix[17][6] = '4'
+			self.matrix[17][7] = '3'
+			self.matrix[17][8] = '3'
+			self.matrix[17][9] = '3'
+			self.matrix[16][0] = '2'
+			self.matrix[16][1] = '3'
+			self.matrix[16][2] = '3'
+			self.matrix[16][3] = '2'
+			self.matrix[16][4] = '3'
+			self.matrix[16][6] = '4'
+			self.matrix[16][7] = '3'
+			self.matrix[16][8] = '3'
+			self.matrix[16][9] = '3'
+			self.matrix[15][0] = '2'
+			self.matrix[15][1] = '3'
+			self.matrix[15][2] = '3'
+			self.matrix[15][3] = '2'
+			self.matrix[15][4] = '3'
+			self.matrix[15][5] = '2'
+			self.matrix[15][7] = '2'
+			self.matrix[15][8] = '2'
+			self.matrix[15][9] = '2'
+
 
 	def update(self, frametime = 0.0):
 		self.image.fill((255,255,255))
 		self.checkCompleted()
-		for y in range(0, canvasHeight):
-			for x in range(0, canvasWidth):
+		for y in range(0, gridHeight):
+			for x in range(0, gridWidth):
 				if self.matrix[y][x] != 0:
 					pygame.draw.rect(self.image, (0,0,0), (x * blockSize, y * blockSize, blockSize, blockSize))
-
 		self.draw()
-
 		self.next += frametime
 		if self.next > 0.5:
 			self.block.moveDown()
 			self.next = 0.0
 
 	def draw(self):
-		for y in range(0, canvasHeight):
-			for x in range(0, canvasWidth):
+		for y in range(0, gridHeight):
+			for x in range(0, gridWidth):
 				if (self.matrix[y][x] != 0):
 					type = self.matrix[y][x]
 					self.shading(type, x, y)
@@ -242,35 +386,38 @@ class Grid(Tetris, pygame.sprite.Sprite):
 		for y, row in enumerate(self.block.matrix):
 			for x, col in enumerate(row):
 				if col > 0:
-					self.matrix[grid.block.row + y][grid.block.col + x] = str(grid.block.type) + ':' + str(grid.block.id)
+					self.matrix[self.block.row + y][self.block.col + x] = str(self.block.type) + ':' + str(self.block.id)
 		self.block.kill()
 		del self.block
-		pygame.mixer.stop()
-		sounds['drop'][choice(list(sounds['drop']))].play()
 		self.block = Block(self)
+		pygame.mixer.stop()
+		sounds['drop'][random.choice(list(sounds['drop']))].play()
+		pygame.event.post(pygame.event.Event(TETRIS_BLOCK_DOWN))
 		
 	def checkCompleted(self):
-		for y in range(0, canvasHeight):
+		for y in range(0, gridHeight):
 			count = 0
-			for x in range(0, canvasWidth):
+			for x in range(0, gridWidth):
 				if self.matrix[y][x] != 0:
 					count += 1
-					if count >= canvasWidth:
+					if count >= gridWidth:
 						self.destroyRow(y)
 
 	def destroyRow(self, targetRow):
 		pygame.mixer.stop()
-		sounds['destroy'][choice(list(sounds['destroy']))].play()
-		for x in range(0, canvasWidth):
+		sounds['destroy'][random.choice(list(sounds['destroy']))].play()
+		for x in range(0, gridWidth):
 		 	self.matrix[targetRow][x] = 0
-		
+
 		for y in range(targetRow, 0, -1):
-			pprint(y)
-			for x in range(0, canvasWidth):
+			for x in range(0, gridWidth):
 				if y == 0:
 					self.matrix[y][x] = 0
 				else:
 					self.matrix[y][x] = self.matrix[y - 1][x]
+
+		pygame.event.post(pygame.event.Event(TETRIS_ROW_CLEARED))
+
 
 class Block(Tetris, pygame.sprite.Sprite):
 	id = 1
@@ -283,7 +430,9 @@ class Block(Tetris, pygame.sprite.Sprite):
 		# 5: [[1,0,0], [1,1,1]],
 		6: [[0,0,1], [1,1,1]],
 		7: [[0,1,0], [1,1,1]],
-		8: [[1]]
+		8: [[1]],
+		#9: [[1,0], [0,1], [0,1], [1,0]],
+		#10: [[1,0,1], [0,0,0], [1,0,1]]
 	}
 
 	def __init__(self, grid):
@@ -293,7 +442,7 @@ class Block(Tetris, pygame.sprite.Sprite):
 		pygame.sprite.Sprite.__init__(self, self.groups)
 		self.row = 0
 		self.col = 5
-		self.type = choice(list(Block.blocks.keys()))
+		self.type = random.choice(list(Block.blocks.keys()))
 		self.matrix = Block.blocks[self.type]
 		self.grid = grid
 		Block.update(self)
@@ -321,7 +470,7 @@ class Block(Tetris, pygame.sprite.Sprite):
 					self.shading(str(self.type), x, y)
 
 		self.x, self.y = self.col * blockSize, self.row * blockSize
-		self.rect.x, self.rect.y = self.x, self.y
+		self.rect.x, self.rect.y = self.x + gridHorizontalOffset, self.y + gridVerticalOffset
 
 	def moveLeft(self):
 		self.col -= 1
@@ -341,7 +490,7 @@ class Block(Tetris, pygame.sprite.Sprite):
 		self.col += 1
 		for row in self.matrix:
 			width = len(row)
-			if self.col + width > canvasWidth:
+			if self.col + width > gridWidth:
 				self.col -= 1
 				return
 
@@ -357,7 +506,7 @@ class Block(Tetris, pygame.sprite.Sprite):
 		new = list(zip(*self.matrix[::-1]))
 		for row in new:
 			width = len(row)
-			if self.col + width > canvasWidth:
+			if self.col + width > gridWidth:
 				return
 
 		for ri, row in enumerate(new):
@@ -382,12 +531,12 @@ class Block(Tetris, pygame.sprite.Sprite):
 
 	def isDown(self):
 		height = len(self.matrix)
-		if self.row + height > canvasHeight:
+		if self.row + height > gridHeight:
 			return True
 
 		for ri, row in enumerate(self.matrix):
 			for ci, col in enumerate(row):
-				if col == 1 and self.grid.matrix[grid.block.row + ri][grid.block.col + ci] != 0:
+				if col == 1 and self.grid.matrix[self.grid.block.row + ri][self.grid.block.col + ci] != 0:
 					return True
 
 		return False
@@ -398,41 +547,48 @@ display = pygame.display.set_mode((0,0), pygame.FULLSCREEN)
 pygame.display.set_caption('Wesleyan Tetris');
 screenInfo = pygame.display.Info()
 screenWidth, screenHeight = int(screenInfo.current_w / 2), int(screenInfo.current_h / 2)
-screen = pygame.Surface((canvasWidth * blockSize, canvasHeight * blockSize))
+screen = pygame.Surface((326,304))
 background = pygame.Surface((screenWidth, screenHeight))
 screenPattern = pygame.image.load('images/background.png')
 for x in range(int(screenWidth / 2)):
 	for y in range(int(screenHeight / 2)):
 		background.blit(screenPattern, (x * 2, y * 2))
 
-sound_4006 = pygame.mixer.Sound('sounds/4006-Shall we.wav')
-sound_4006.play()
+pygame.mixer.Sound('sounds/4006-Shall we.wav').play()
 
-SOME_EVENT = pygame.USEREVENT + 1
+TETRIS_BLOCK_DOWN = pygame.USEREVENT + 1
+TETRIS_ROW_CLEARED = pygame.USEREVENT + 2
 
 clock = pygame.time.Clock()
 fps = 60
 playtime = 0.0 # seconds
 
-keys = [False, False, False, False, False] # up, down, left, right, space
+keys = [False, False, False, False, False, False] # up, down, left, right, space, p
 
 gridGroup = pygame.sprite.Group()
 blockGroup = pygame.sprite.Group()
 textGroup = pygame.sprite.Group()
+canvasGroup = pygame.sprite.Group()
 everythingGroup = pygame.sprite.LayeredUpdates()
 
 Grid._layer = 8
 Block._layer = 9
 Text._layer = 10
+Canvas._layer = 1
 
 Grid.groups = gridGroup, everythingGroup
 Block.groups = blockGroup, everythingGroup
 Text.groups = textGroup, everythingGroup
+Canvas.groups = canvasGroup, everythingGroup
 
-grid = Grid()
-# Text('This is Tetris', [2,0])
+canvas = Canvas()
+# grid = Grid()
 
 gameloop = True
+statePause = False
+stateOver = False
+stateNext = False
+
 while gameloop:
 	frametime = clock.tick(fps) / 1000
 	playtime += frametime
@@ -453,6 +609,8 @@ while gameloop:
 				keys[4] = True
 			if event.key == pygame.K_ESCAPE:
 				gameloop = False
+			if event.key == pygame.K_p:
+				keys[5] = True
 		if event.type == pygame.KEYUP:
 			if event.key == pygame.K_UP:
 				keys[0] = False
@@ -464,33 +622,50 @@ while gameloop:
 				keys[3] = False
 			if event.key == pygame.K_SPACE:
 				keys[4] = False
-				
-	if keys[0]: #up
-		grid.block.rotate()
-		keys[0] = False
+			if event.key == pygame.K_p:
+				keys[5] = False
+		if event.type == TETRIS_BLOCK_DOWN:
+			canvas.scoreBlockDown()
+		if event.type == TETRIS_ROW_CLEARED:
+			canvas.scoreRowCleared()
+	
+	if statePause == False and stateOver == False and stateNext == False:	
+		if keys[0]: # up
+			canvas.grid.block.rotate()
+			keys[0] = False
 
-	if keys[1]: # down
-		grid.block.drop()
-		keys[1] = False
+		if keys[1]: # down
+			canvas.grid.block.drop()
+			keys[1] = False
 
-	if keys[2]: # left
-		grid.block.moveLeft()
-		keys[2] = False
+		if keys[2]: # left
+			canvas.grid.block.moveLeft()
+			keys[2] = False
 
-	if keys[3]: # right
-		grid.block.moveRight()
-		keys[3] = False
+		if keys[3]: # right
+			canvas.grid.block.moveRight()
+			keys[3] = False
 
-	if keys[4]: # space
-		grid.block.drop()
-		keys[4] = False
+		if keys[4]: # space
+			canvas.grid.block.drop()
+			keys[4] = False
 
-	everythingGroup.update(frametime)
+	if keys[5] and stateOver == False and stateNext == False: # p
+		keys[5] = False
+		if statePause:
+			statePause = False
+		else:
+			statePause = True
+			pygame.mixer.stop()
+			sounds['misc'][1].play()
+
+	if statePause == False and stateOver == False and stateNext == False:
+		everythingGroup.update(frametime)
 	everythingGroup.draw(screen)
 	pygame.transform.scale(background, (screenInfo.current_w, screenInfo.current_h), display)
 
-	result = pygame.transform.scale(screen, (canvasWidth * blockSize * 2, canvasHeight * blockSize * 2))
-	display.blit(result, (screenWidth - ((canvasWidth * blockSize * 2) / 2), screenHeight - ((canvasHeight * blockSize * 2) / 2)))
+	result = pygame.transform.scale(screen, (326* 2, 304 * 2))
+	display.blit(result, (screenWidth - (((gridWidth * blockSize + gridHorizontalOffset) * 2) / 2), screenHeight - ((gridHeight * blockSize * 2) / 2)))
 	
 	pygame.draw.rect(display, (255,255,255), (0,0,screenWidth * 2,38))
 	pygame.draw.rect(display, (0,0,0), (0,38,screenWidth * 2,2))
